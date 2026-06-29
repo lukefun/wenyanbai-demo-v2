@@ -8,12 +8,13 @@ var LVL_CLR=['#bbb','#e08080','#d89040','#d4a830','#50a868','#4890b8','#6878b8',
 /* ==================== 状态 ==================== */
 var R={};try{R=JSON.parse(localStorage.getItem('w3_r')||'{}');}catch(e){R={};}
 var stats={t:0,c:0};try{stats=JSON.parse(localStorage.getItem('w3_s')||'{"t":0,"c":0}');}catch(e){stats={t:0,c:0};}
+var quizHistory=[];try{quizHistory=JSON.parse(localStorage.getItem('w3_qh')||'[]');}catch(e){quizHistory=[];}
 var lQueue=[],lPos=0,lRev=false,lFilter='all',lLibTab='all';
 var sNewCount=0,sNewList=[];
 var revealed=false;
 
 /* ==================== 工具 ==================== */
-function save(){localStorage.setItem('w3_r',JSON.stringify(R));localStorage.setItem('w3_s',JSON.stringify(stats));}
+function save(){localStorage.setItem('w3_r',JSON.stringify(R));localStorage.setItem('w3_s',JSON.stringify(stats));localStorage.setItem('w3_qh',JSON.stringify(quizHistory));}
 function ival(l){return l<INT.length?INT[l]:INT[INT.length-1];}
 function lv(i){return R[i]?R[i].l:0;}
 function done(i){return lv(i)>0;}
@@ -304,15 +305,30 @@ function renderProf(){
 function trackQuiz(q,correct){
   // Find matching card index by sentence
   var plainS=q.s.replace(/<[^>]*>/g,'');
+  var cardIdx=-1;
   for(var i=0;i<C.length;i++){
     if(C[i].s.replace(/<[^>]*>/g,'')===plainS){
       if(!R[i])R[i]={l:0,n:0,ok:0,qa:{t:0,c:0}};
       if(!R[i].qa)R[i].qa={t:0,c:0};
       R[i].qa.t++;
       if(correct)R[i].qa.c++;
+      cardIdx=i;
       break;
     }
   }
+  // Record quiz history with detail
+  quizHistory.push({
+    ts:now(),
+    q:q.q,
+    s:q.s,
+    r:q.r,
+    op:q.op,
+    a:q.a,
+    ok:correct?1:0,
+    ci:cardIdx
+  });
+  // Keep last 200 records
+  if(quizHistory.length>200)quizHistory=quizHistory.slice(-200);
 }
 function showDetail(type){
   var overlay=document.getElementById('detailOverlay');
@@ -403,27 +419,46 @@ function buildQuizCountDetail(){
   var total=stats.t;
   var html='<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n">'+total+'</div><div class="dg-stat-l">总测验次数</div></div></div>';
   if(total===0)return html+'<div class="dg-empty">\uD83C\uDFAF<br>还没有进行过测验<br>完成学习后快来检验效果！</div>';
-  // Per-character quiz count
-  var charCounts={};var charOrder=[];
-  for(var key in R){
-    var rec=R[key];
-    if(rec.qa){
-      var c=C[key];
-      if(c){
-        if(!charCounts[c.c])charCounts[c.c]=0;
-        charCounts[c.c]+=rec.qa.t;
-        if(charOrder.indexOf(c.c)<0)charOrder.push(c.c);
+  if(quizHistory.length===0){
+    return html+'<div class="dg-empty">\uD83D\uDCDD<br>详细记录从这里开始<br>之后的每次测验都会记录每道题的对错情况</div>';
+  }
+  // Recent quiz items (last 50)
+  var recent=quizHistory.slice(-50).reverse();
+  html+='<div style="font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:700">测验记录（'+(recent.length<quizHistory.length?'最近'+recent.length+'条':'全部'+recent.length+'条')+'）</div>';
+  // Group by session (consecutive items within 2 min = same session)
+  var sessions=[];var curSession=[];
+  recent.forEach(function(rec,idx){
+    if(curSession.length===0){curSession.push(rec);return;}
+    var prev=curSession[curSession.length-1];
+    if(Math.abs(rec.ts-prev.ts)<120000){curSession.push(rec);}
+    else{sessions.push(curSession);curSession=[rec];}
+  });
+  if(curSession.length>0)sessions.push(curSession);
+  sessions.forEach(function(sess,si){
+    var sCorrect=0,sTotal=sess.length;
+    sess.forEach(function(r){sCorrect+=r.ok;});
+    var sPct=Math.round(sCorrect/sTotal*100);
+    var d=new Date(sess[0].ts);
+    var timeStr=(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2);
+    var sessColor=sPct>=80?'var(--green)':sPct>=50?'var(--gold)':'#d05050';
+    html+='<div class="dg-session"><div class="dg-sess-head open" onclick="this.classList.toggle(\'open\')">';
+    html+='<div class="dg-sess-info"><span class="dg-sess-time">'+timeStr+'</span><span class="dg-sess-score" style="color:'+sessColor+'">'+sCorrect+'/'+sTotal+' ('+sPct+'%)</span></div>';
+    html+='<span class="dg-sess-arrow">▾</span></div>';
+    html+='<div class="dg-sess-items">';
+    sess.forEach(function(rec){
+      var icon=rec.ok?'<span class="dg-item-ok">✓</span>':'<span class="dg-item-no">✗</span>';
+      var correctAns=rec.op[rec.a];
+      var charName='';
+      if(rec.ci>=0&&C[rec.ci])charName=C[rec.ci].c;
+      html+='<div class="dg-qi'+(rec.ok?' dg-qi-ok':' dg-qi-no')+'">';
+      html+='<div class="dg-qi-left">'+icon+(charName?'<span class="dg-qi-char">'+charName+'</span>':'')+'<span class="dg-qi-q">'+rec.q+'</span></div>';
+      if(!rec.ok){
+        html+='<div class="dg-qi-ans">正确答案：'+correctAns+'</div>';
       }
-    }
-  }
-  if(charOrder.length>0){
-    charOrder.sort(function(a,b){return charCounts[b]-charCounts[a];});
-    html+='<div style="font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:700">各字词测验次数</div>';
-    charOrder.forEach(function(ch){
-      var cnt=charCounts[ch];
-      html+='<div class="dg-bar-wrap"><div class="dg-bar-label"><span class="dg-bar-name">'+ch+'</span><span class="dg-bar-pct">'+cnt+' 次</span></div><div class="dg-bar"><div class="dg-bar-fill" style="width:'+Math.min(cnt*10,100)+'%;background:var(--accent)"></div></div></div>';
+      html+='</div>';
     });
-  }
+    html+='</div></div>';
+  });
   return html;
 }
 

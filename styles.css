@@ -157,3 +157,23 @@ body{font-family:var(--sans);color:var(--text);overflow:hidden}
 .qo.ok{border-color:var(--green);background:rgba(61,139,99,.06)}.qo.ok .qo-l{border-color:var(--green);background:var(--green);color:#fff}
 .qo.no{border-color:#d05050;background:rgba(208,80,80,.06)}.qo.no .qo-l{border-color:#d05050;color:#d05050}
 .qo.off{pointer-events:none;opacity:.3}
+/* 测验次数详情 - 会话列表 */
+.dg-session{background:var(--card);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.dg-sess-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;transition:background .15s}
+.dg-sess-head:active{background:rgba(0,0,0,.03)}
+.dg-sess-info{display:flex;align-items:center;gap:10px}
+.dg-sess-time{font-size:13px;color:var(--muted);font-weight:600}
+.dg-sess-score{font-size:14px;font-weight:900}
+.dg-sess-arrow{font-size:12px;color:var(--muted);transition:transform .25s}
+.dg-sess-head.open .dg-sess-arrow{transform:rotate(180deg)}
+.dg-sess-items{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.dg-sess-head.open+.dg-sess-items{max-height:2000px}
+.dg-qi{padding:8px 14px;border-top:1px solid var(--border);font-size:13px}
+.dg-qi-left{display:flex;align-items:center;gap:6px;line-height:1.5}
+.dg-item-ok{color:var(--green);font-weight:900;font-size:14px;flex-shrink:0}
+.dg-item-no{color:#d05050;font-weight:900;font-size:14px;flex-shrink:0}
+.dg-qi-char{font-family:var(--serif);font-weight:900;color:var(--accent);font-size:14px;flex-shrink:0}
+.dg-qi-q{color:var(--text);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dg-qi-ans{color:#d05050;font-size:12px;margin-top:2px;padding-left:22px;line-height:1.5}
+.dg-qi-ok{background:rgba(61,139,99,.03)}
+.dg-qi-no{background:rgba(208,80,80,.04)}
