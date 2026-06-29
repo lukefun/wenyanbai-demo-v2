@@ -2,7 +2,7 @@
 schema_version: 1
 locale: zh-CN
 branch: main
-exported_at: "2026-06-29T14:21:32Z"
+exported_at: "2026-06-29T14:59:31Z"
 modules:
     "":
         dir_name: 文言实词虚词间隔重复学习应用
