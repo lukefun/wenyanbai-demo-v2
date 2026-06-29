@@ -1,0 +1,5 @@
+# 截图/临时文件
+screenshot*.png
+
+# IDE 自动生成
+.qoder/repowiki/
