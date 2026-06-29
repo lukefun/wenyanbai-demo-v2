@@ -1,4 +1,4 @@
-var C = window.CARDS; var Q = window.QUIZZES;
+var C = window.CARDS; var Q = window.QUIZZES; var CATS = window.CATEGORIES;
 
 /* ==================== 间隔重复 ==================== */
 var INT=[0,180000,900000,5400000,86400000,172800000,345600000,604800000,1296000000,2592000000];
@@ -8,8 +8,9 @@ var LVL_CLR=['#bbb','#e08080','#d89040','#d4a830','#50a868','#4890b8','#6878b8',
 /* ==================== 状态 ==================== */
 var R={};try{R=JSON.parse(localStorage.getItem('w3_r')||'{}');}catch(e){R={};}
 var stats={t:0,c:0};try{stats=JSON.parse(localStorage.getItem('w3_s')||'{"t":0,"c":0}');}catch(e){stats={t:0,c:0};}
-var quizHistory=[];try{quizHistory=JSON.parse(localStorage.getItem('w3_qh')||'[]');}catch(e){quizHistory=[];}
+var quizHistory=[];try{quizHistory=JSON.parse(localStorage.getItem('w3_qh')||'[]');}catch(e){quizHistory=[]};
 var lQueue=[],lPos=0,lRev=false,lFilter='all',lLibTab='all';
+var _savedCat=localStorage.getItem('w3_cat');lCat=(_savedCat&&CATS[_savedCat])?_savedCat:'all';
 var sNewCount=0,sNewList=[];
 var revealed=false;
 
@@ -20,8 +21,10 @@ function lv(i){return R[i]?R[i].l:0;}
 function done(i){return lv(i)>0;}
 function nextT(i){return R[i]?R[i].n:0;}
 function now(){return Date.now();}
-function dueCount(){var c=0,n=now();for(var i=0;i<C.length;i++)if(done(i)&&nextT(i)<=n)c++;return c;}
-function newCount(){var c=0;for(var i=0;i<C.length;i++)if(!done(i))c++;return c;}
+function inCat(ch){return lCat==='all'||(CATS[lCat]&&CATS[lCat].indexOf(ch)>=0);}
+function filterC(){if(lCat==='all')return C;return C.filter(function(c){return inCat(c.c);});}
+function dueCount(){var c=0,n=now(),fc=filterC();for(var i=0;i<fc.length;i++){var idx=C.indexOf(fc[i]);if(done(idx)&&nextT(idx)<=n)c++;}return c;}
+function newCount(){var c=0,fc=filterC();for(var i=0;i<fc.length;i++){var idx=C.indexOf(fc[i]);if(!done(idx))c++;}return c;}
 function mastered(){var m={};C.forEach(function(c,i){if(done(i)){if(!m[c.c])m[c.c]=0;m[c.c]++;}});var r=[];for(var k in m){var total=C.filter(function(x){return x.c===k}).length;if(m[k]/total>=0.8)r.push(k);}return r;}
 function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.random()*i+1|0;var t=a[i];a[i]=a[j];a[j]=t;}}
 
@@ -35,35 +38,73 @@ function nav(s){
   if(s==='prof')renderProf();
 }
 
+/* ==================== 分类选择 ==================== */
+var CAT_GROUPS=[
+  {label:'\u5168\u90e8',cats:['all']},
+  {label:'\u5b66\u6bb5',cats:['\u521d\u4e2d\u5fc5\u5b66','\u9ad8\u4e2d\u5fc5\u5b66']},
+  {label:'\u8003\u8bd5',cats:['\u4e2d\u8003\u9ad8\u9891','\u9ad8\u8003\u9ad8\u9891']},
+  {label:'\u8bcd\u6027',cats:['\u521d\u4e2d\u5b9e\u8bcd','\u9ad8\u4e2d\u5b9e\u8bcd','\u521d\u4e2d\u865a\u8bcd','\u9ad8\u4e2d\u865a\u8bcd']}
+];
+function renderCatSel(){
+  var el=document.getElementById('catSel');
+  var html='';
+  CAT_GROUPS.forEach(function(g){
+    html+='<div class="cat-group"><div class="cat-group-label">'+g.label+'</div><div class="cat-pills">';
+    g.cats.forEach(function(cat){
+      var cnt=catCount(cat);
+      var cls=cat===lCat?'cat-pill on':'cat-pill';
+      var label=cat==='all'?'\u5168\u90e8 '+cnt:cat+' '+cnt;
+      html+='<div class="'+cls+'" onclick="setCat(\''+cat+'\',this)">'+label+'</div>';
+    });
+    html+='</div></div>';
+  });
+  el.innerHTML=html;
+}
+function catCount(cat){
+  if(cat==='all'){var s={};C.forEach(function(c){s[c.c]=1;});return Object.keys(s).length;}
+  var chars=CATS[cat];if(!chars)return 0;
+  var seen={},cnt=0;
+  C.forEach(function(c){if(!seen[c.c]&&chars.indexOf(c.c)>=0){seen[c.c]=1;cnt++;}});
+  return cnt;
+}
+function setCat(cat){
+  lCat=cat;localStorage.setItem('w3_cat',cat);
+  renderCatSel();updateHome();
+}
+
 /* ==================== 首页 ==================== */
 function updateHome(){
-  var dc=dueCount(),nc=newCount(),tc=dc+nc,learned=C.length-nc;
+  var fc=filterC();
+  var dc=0,nc=0,n=now();
+  fc.forEach(function(c){var idx=C.indexOf(c);if(done(idx)&&nextT(idx)<=n)dc++;else if(!done(idx))nc++;});
+  var tc=dc+nc,learned=fc.length-nc;
   document.getElementById('hNum').textContent=learned;
-  document.getElementById('hDen').textContent='/ '+C.length+' 张';
-  document.getElementById('hBar').style.width=Math.round(learned/C.length*100)+'%';
+  document.getElementById('hDen').textContent='/ '+fc.length+' \u5f20';
+  document.getElementById('hBar').style.width=fc.length?Math.round(learned/fc.length*100)+'%':'0%';
   var mc=mastered();
-  var _coreChars={};C.forEach(function(c){_coreChars[c.c]=1;});var _coreTotal=Object.keys(_coreChars).length;
-  document.getElementById('hSub').textContent='已掌握 '+mc.length+'/'+_coreTotal+' 核心字';
+  var _coreChars={};fc.forEach(function(c){_coreChars[c.c]=1;});var _coreTotal=Object.keys(_coreChars).length;
+  document.getElementById('hSub').textContent='\u5df2\u638c\u63e1 '+mc.filter(function(ch){return _coreChars[ch]}).length+'/'+_coreTotal+' \u6838\u5fc3\u5b57';
   var fil=document.getElementById('hFil');
-  fil.innerHTML='<div class="fil-i'+(lFilter==='all'?' on':'')+'" onclick="setFilter(\'all\',this)">全部 '+tc+'</div>'
-    +'<div class="fil-i'+(lFilter==='due'?' on':'')+'" onclick="setFilter(\'due\',this)">待复习 '+dc+'</div>'
-    +'<div class="fil-i'+(lFilter==='new'?' on':'')+'" onclick="setFilter(\'new\',this)">新词 '+nc+'</div>';
+  fil.innerHTML='<div class="fil-i'+(lFilter==='all'?' on':'')+'" onclick="setFilter(\'all\',this)">\u5168\u90e8 '+tc+'</div>'
+    +'<div class="fil-i'+(lFilter==='due'?' on':'')+'" onclick="setFilter(\'due\',this)">\u5f85\u590d\u4e60 '+dc+'</div>'
+    +'<div class="fil-i'+(lFilter==='new'?' on':'')+'" onclick="setFilter(\'new\',this)">\u65b0\u8bcd '+nc+'</div>';
   var actS=document.getElementById('actLearnS');
-  if(tc===0)actS.textContent='全部掌握！';
-  else if(dc===0)actS.textContent=nc+' 张新词待学';
-  else if(nc===0)actS.textContent=dc+' 张待复习';
-  else actS.textContent=dc+' 复习 + '+nc+' 新词';
+  if(tc===0)actS.textContent='\u5168\u90e8\u638c\u63e1\uff01';
+  else if(dc===0)actS.textContent=nc+' \u5f20\u65b0\u8bcd\u5f85\u5b66';
+  else if(nc===0)actS.textContent=dc+' \u5f20\u5f85\u590d\u4e60';
+  else actS.textContent=dc+' \u590d\u4e60 + '+nc+' \u65b0\u8bcd';
+  renderCatSel();
 }
 function setFilter(f,el){lFilter=f;document.querySelectorAll('#hFil .fil-i').forEach(function(e){e.classList.remove('on')});if(el)el.classList.add('on');}
 
 /* ==================== 学习 ==================== */
 function buildQueue(){
-  var q=[],n=now();
-  if(lFilter==='new'){for(var i=0;i<C.length;i++)if(!done(i))q.push(i);}
-  else if(lFilter==='due'){for(var i=0;i<C.length;i++)if(done(i)&&nextT(i)<=n)q.push(i);}
+  var q=[],n=now(),fc=filterC();
+  if(lFilter==='new'){fc.forEach(function(c){var idx=C.indexOf(c);if(!done(idx))q.push(idx);});}
+  else if(lFilter==='due'){fc.forEach(function(c){var idx=C.indexOf(c);if(done(idx)&&nextT(idx)<=n)q.push(idx);});}
   else{
     var rev=[],nw=[];
-    for(var i=0;i<C.length;i++){if(done(i)&&nextT(i)<=n)rev.push(i);else if(!done(i))nw.push(i);}
+    fc.forEach(function(c){var idx=C.indexOf(c);if(done(idx)&&nextT(idx)<=n)rev.push(idx);else if(!done(idx))nw.push(idx);});
     shuf(rev);shuf(nw);var re,ni;re=ni=0;while(re<rev.length||ni<nw.length){if(re<rev.length)q.push(rev[re++]);if(re<rev.length)q.push(rev[re++]);if(re<rev.length)q.push(rev[re++]);if(ni<nw.length)q.push(nw[ni++]);}
   }
   return q;

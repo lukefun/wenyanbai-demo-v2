@@ -36,6 +36,14 @@ body{font-family:var(--sans);color:var(--text);overflow:hidden}
 .fil{display:flex;gap:6px;padding:0 16px;margin-top:14px;flex-wrap:wrap}
 .fil-i{padding:7px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:18px;font-size:12px;cursor:pointer;color:var(--muted);transition:all .2s}
 .fil-i.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* 分类选择器 */
+.cat-sel{padding:10px 16px 0;display:flex;flex-direction:column;gap:8px}
+.cat-group{display:flex;align-items:center;gap:8px}
+.cat-group-label{font-size:11px;color:var(--muted);font-weight:700;flex-shrink:0;min-width:28px}
+.cat-pills{display:flex;gap:5px;flex-wrap:wrap}
+.cat-pill{padding:5px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;font-size:11px;cursor:pointer;color:var(--muted);transition:all .2s;white-space:nowrap}
+.cat-pill:active{transform:scale(.95)}
+.cat-pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .fc-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(192,64,48,.06);color:var(--accent);padding:4px 12px;border-radius:16px;font-size:12px;margin:10px auto 14px}
 .fc-wrap{text-align:center;flex:1;display:flex;flex-direction:column;padding:0 16px 16px;overflow-y:auto}
 .lv-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;color:#fff;letter-spacing:.5px}
