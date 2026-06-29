@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>文言斩</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+<!-- ===== 首页 ===== -->
+<div class="sc on" id="s-home">
+  <div style="padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:20px;font-weight:900;letter-spacing:1px">文言斩</span>
+    <span style="font-size:12px;color:var(--muted)" id="hStreak"></span>
+  </div>
+  <div class="hero">
+    <div class="hero-label">总学习进度</div>
+    <div class="hero-row"><span class="hero-num" id="hNum">0</span><span class="hero-den" id="hDen">/ 0 张</span></div>
+    <div class="hero-bar"><div class="hero-bf" id="hBar"></div></div>
+    <div class="hero-sub" id="hSub"></div>
+  </div>
+  <div class="fil" id="hFil"></div>
+  <div class="acts" style="padding-bottom:16px">
+    <div class="act" onclick="startLearn()"><div class="act-i">📖</div><div class="act-t">开始学习</div><div class="act-s" id="actLearnS"></div></div>
+    <div class="act" onclick="startQuiz()"><div class="act-i">🎯</div><div class="act-t">复习测验</div><div class="act-s">随机 10 题</div></div>
+  </div>
+</div>
+
+<!-- ===== 学习页 ===== -->
+<div class="sc" id="s-learn">
+  <div class="top">
+    <div class="top-back" onclick="nav('home')">←</div>
+    <div class="top-bar"><div class="top-fill" id="lp"></div></div>
+    <div class="top-ct" id="lc"></div>
+  </div>
+  <div class="fc-wrap" id="fcWrap"></div>
+</div>
+
+<!-- ===== 测验页 ===== -->
+<div class="sc" id="s-quiz">
+  <div class="top">
+    <div class="top-back" onclick="nav('home')">←</div>
+    <div class="top-ct" id="qc" style="flex:1;text-align:center"></div>
+    <div style="width:28px"></div>
+  </div>
+  <div class="q-body" id="qb"></div>
+</div>
+
+<!-- ===== 词库页 ===== -->
+<div class="sc" id="s-lib">
+  <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:20px;font-weight:900">词库</span>
+    <span style="font-size:12px;color:var(--muted)" id="libBadge"></span>
+  </div>
+  <div style="padding:0 16px;flex:1;overflow-y:auto">
+    <div class="fil" style="margin:0 0 14px">
+      <div class="fil-i on" onclick="libTab('all',this)">全部</div>
+      <div class="fil-i" onclick="libTab('虚词',this)">虚词</div>
+      <div class="fil-i" onclick="libTab('实词',this)">实词</div>
+    </div>
+    <div id="libC"></div>
+  </div>
+</div>
+
+<!-- ===== 我的页 ===== -->
+<div class="sc" id="s-prof">
+  <div style="padding:14px 16px 6px"><span style="font-size:20px;font-weight:900">我的</span></div>
+  <div class="rank-box">
+    <div class="rank-i">📜</div>
+    <div class="rank-t" id="rRank">童 生</div>
+    <div class="rank-sub" id="rSub"></div>
+    <div class="rank-bar"><div class="rank-bf" id="rBar"></div></div>
+  </div>
+  <div class="pstats">
+    <div class="stc"><div class="stc-n" id="sW">0</div><div class="stc-l">学过含义</div></div>
+    <div class="stc"><div class="stc-n g" id="sA">0%</div><div class="stc-l">测验正确率</div></div>
+    <div class="stc"><div class="stc-n" id="sS">0</div><div class="stc-l">测验次数</div></div>
+    <div class="stc"><div class="stc-n" id="sC">0</div><div class="stc-l">字已掌握</div></div>
+  </div>
+</div>
+
+<!-- ===== 底栏 ===== -->
+<div class="nav">
+  <div class="ni on" data-s="home" onclick="nav('home')"><b>🏠</b><span>首页</span></div>
+  <div class="ni" data-s="learn" onclick="startLearn()"><b>📖</b><span>学习</span></div>
+  <div class="ni" data-s="quiz" onclick="startQuiz()"><b>⚔️</b><span>测验</span></div>
+  <div class="ni" data-s="lib" onclick="nav('lib')"><b>📚</b><span>词库</span></div>
+  <div class="ni" data-s="prof" onclick="nav('prof')"><b>👤</b><span>我的</span></div>
+</div>
+
+<!-- ===== 中途测验弹窗 ===== -->
+<div class="modal-overlay" id="mQuiz">
+  <div class="modal">
+    <div class="modal-i">⚡</div>
+    <div class="modal-t">小测验时间！</div>
+    <div class="modal-s" id="mQuizS">已学完 15 个新词，来检验一下记忆效果吧！</div>
+    <div class="modal-b">
+      <button class="btn btn-g" onclick="closeMidQuiz()">跳过</button>
+      <button class="btn btn-p" onclick="doMidQuiz()">开始测验</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script src="data/cards.js"></script>
+<script src="data/quiz.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
