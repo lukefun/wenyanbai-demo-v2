@@ -41,7 +41,8 @@ function updateHome(){
   document.getElementById('hDen').textContent='/ '+C.length+' 张';
   document.getElementById('hBar').style.width=Math.round(learned/C.length*100)+'%';
   var mc=mastered();
-  document.getElementById('hSub').textContent='已掌握 '+mc.length+'/60 核心字';
+  var _coreChars={};C.forEach(function(c){_coreChars[c.c]=1;});var _coreTotal=Object.keys(_coreChars).length;
+  document.getElementById('hSub').textContent='已掌握 '+mc.length+'/'+_coreTotal+' 核心字';
   var fil=document.getElementById('hFil');
   fil.innerHTML='<div class="fil-i'+(lFilter==='all'?' on':'')+'" onclick="setFilter(\'all\',this)">全部 '+tc+'</div>'
     +'<div class="fil-i'+(lFilter==='due'?' on':'')+'" onclick="setFilter(\'due\',this)">待复习 '+dc+'</div>'
@@ -188,10 +189,12 @@ function mAnsQ(i){
     else if(j===i)el.classList.add('no');
     else el.classList.add('off');
   }
-  if(i===q.a)mQuizScore++;
-  if(i===q.a)stats.c++;
+  var correct=(i===q.a);
+  if(correct)mQuizScore++;
+  if(correct)stats.c++;
+  trackQuiz(q,correct);
   save();
-  setTimeout(function(){mQuizPos++;mQuizDone=false;showMidQuizQ();},i===q.a?700:1400);
+  setTimeout(function(){mQuizPos++;mQuizDone=false;showMidQuizQ();},correct?700:1400);
 }
 
 /* ==================== 正式测验 ==================== */
@@ -221,10 +224,12 @@ function ansQ(i){
     else if(j===i)el.classList.add('no');
     else el.classList.add('off');
   }
-  if(i===q.a)qScore++;
-  if(i===q.a)stats.c++;
+  var correct=(i===q.a);
+  if(correct)qScore++;
+  if(correct)stats.c++;
+  trackQuiz(q,correct);
   save();
-  setTimeout(function(){qIdx++;renderQ();},i===q.a?700:1400);
+  setTimeout(function(){qIdx++;renderQ();},correct?700:1400);
 }
 
 /* ==================== 词库 ==================== */
@@ -293,6 +298,155 @@ function renderProf(){
   document.getElementById('sA').textContent=pct+'%';
   document.getElementById('sS').textContent=stats.t;
   document.getElementById('sC').textContent=mc;
+}
+
+/* ==================== 统计详情弹窗 ==================== */
+function trackQuiz(q,correct){
+  // Find matching card index by sentence
+  var plainS=q.s.replace(/<[^>]*>/g,'');
+  for(var i=0;i<C.length;i++){
+    if(C[i].s.replace(/<[^>]*>/g,'')===plainS){
+      if(!R[i])R[i]={l:0,n:0,ok:0,qa:{t:0,c:0}};
+      if(!R[i].qa)R[i].qa={t:0,c:0};
+      R[i].qa.t++;
+      if(correct)R[i].qa.c++;
+      break;
+    }
+  }
+}
+function showDetail(type){
+  var overlay=document.getElementById('detailOverlay');
+  var title=document.getElementById('detailTitle');
+  var body=document.getElementById('detailBody');
+  var html='';
+  if(type==='learned'){
+    title.textContent='学过含义详情';
+    html=buildLearnedDetail();
+  }else if(type==='accuracy'){
+    title.textContent='测验正确率详情';
+    html=buildAccuracyDetail();
+  }else if(type==='quizCount'){
+    title.textContent='测验次数详情';
+    html=buildQuizCountDetail();
+  }else if(type==='mastered'){
+    title.textContent='字已掌握详情';
+    html=buildMasteredDetail();
+  }
+  body.innerHTML=html;
+  overlay.classList.add('on');
+}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('on');}
+function closeDetailBg(e){if(e.target===document.getElementById('detailOverlay'))closeDetail();}
+
+function buildLearnedDetail(){
+  var nc=newCount(),learned=C.length-nc;
+  if(learned===0)return '<div class="dg-empty">\uD83D\uDCDA<br>还没有学过任何含义<br>快去开始学习吧！</div>';
+  // Group learned cards by character
+  var groups={};var order=[];
+  for(var i=0;i<C.length;i++){
+    if(done(i)){
+      var c=C[i];
+      if(!groups[c.c]){groups[c.c]=[];order.push(c.c);}
+      groups[c.c].push({idx:i,card:c});
+    }
+  }
+  var html='<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n">'+learned+'</div><div class="dg-stat-l">已学含义</div></div><div class="dg-stat"><div class="dg-stat-n">'+order.length+'</div><div class="dg-stat-l">涉及字词</div></div></div>';
+  order.forEach(function(ch){
+    var cards=groups[ch];
+    var t=C.filter(function(x){return x.c===ch}).length;
+    var lvColor='#50a868';
+    html+='<div class="dg-char">'+ch+' <span class="dg-badge" style="background:'+lvColor+'">'+cards.length+'/'+t+'</span></div>';
+    cards.forEach(function(item){
+      html+='<div class="dg-item"><div class="dg-meaning">'+item.card.m+'</div><div class="dg-sent">'+item.card.s+'</div><div class="dg-src">'+item.card.r+'</div></div>';
+    });
+  });
+  return html;
+}
+
+function buildAccuracyDetail(){
+  var pct=stats.t>0?Math.round(stats.c/stats.t*100):0;
+  var total=stats.t,correct=stats.c,wrong=total-correct;
+  var html='<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n" style="color:var(--green)">'+pct+'%</div><div class="dg-stat-l">总正确率</div></div><div class="dg-stat"><div class="dg-stat-n" style="color:var(--green)">'+correct+'</div><div class="dg-stat-l">答对</div></div><div class="dg-stat"><div class="dg-stat-n" style="color:#d05050">'+wrong+'</div><div class="dg-stat-l">答错</div></div></div>';
+  if(total===0)return html+'<div class="dg-empty">\uD83C\uDFAF<br>还没有进行过测验</div>';
+  // Per-character accuracy from quiz history in R
+  var charStats={};var charOrder=[];
+  for(var key in R){
+    var rec=R[key];
+    if(rec.qa){
+      var c=C[key];
+      if(c){
+        if(!charStats[c.c])charStats[c.c]={t:0,c:0};
+        charStats[c.c].t+=rec.qa.t;
+        charStats[c.c].c+=rec.qa.c;
+        if(charOrder.indexOf(c.c)<0)charOrder.push(c.c);
+      }
+    }
+  }
+  if(charOrder.length>0){
+    html+='<div style="font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:700">各字词正确率</div>';
+    charOrder.sort(function(a,b){
+      var pa=charStats[a].t>0?charStats[a].c/charStats[a].t:0;
+      var pb=charStats[b].t>0?charStats[b].c/charStats[b].t:0;
+      return pa-pb;
+    });
+    charOrder.forEach(function(ch){
+      var s=charStats[ch];
+      var p=s.t>0?Math.round(s.c/s.t*100):0;
+      var color=p>=80?'var(--green)':p>=50?'var(--gold)':'#d05050';
+      html+='<div class="dg-bar-wrap"><div class="dg-bar-label"><span class="dg-bar-name">'+ch+'</span><span class="dg-bar-pct">'+p+'% ('+s.c+'/'+s.t+')</span></div><div class="dg-bar"><div class="dg-bar-fill" style="width:'+p+'%;background:'+color+'"></div></div></div>';
+    });
+  }
+  return html;
+}
+
+function buildQuizCountDetail(){
+  var total=stats.t;
+  var html='<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n">'+total+'</div><div class="dg-stat-l">总测验次数</div></div></div>';
+  if(total===0)return html+'<div class="dg-empty">\uD83C\uDFAF<br>还没有进行过测验<br>完成学习后快来检验效果！</div>';
+  // Per-character quiz count
+  var charCounts={};var charOrder=[];
+  for(var key in R){
+    var rec=R[key];
+    if(rec.qa){
+      var c=C[key];
+      if(c){
+        if(!charCounts[c.c])charCounts[c.c]=0;
+        charCounts[c.c]+=rec.qa.t;
+        if(charOrder.indexOf(c.c)<0)charOrder.push(c.c);
+      }
+    }
+  }
+  if(charOrder.length>0){
+    charOrder.sort(function(a,b){return charCounts[b]-charCounts[a];});
+    html+='<div style="font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:700">各字词测验次数</div>';
+    charOrder.forEach(function(ch){
+      var cnt=charCounts[ch];
+      html+='<div class="dg-bar-wrap"><div class="dg-bar-label"><span class="dg-bar-name">'+ch+'</span><span class="dg-bar-pct">'+cnt+' 次</span></div><div class="dg-bar"><div class="dg-bar-fill" style="width:'+Math.min(cnt*10,100)+'%;background:var(--accent)"></div></div></div>';
+    });
+  }
+  return html;
+}
+
+function buildMasteredDetail(){
+  var mc=mastered();
+  var totalChars={};C.forEach(function(c){totalChars[c.c]=1;});
+  var total=Object.keys(totalChars).length;
+  if(mc.length===0)return '<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n">0/'+total+'</div><div class="dg-stat-l">已掌握</div></div></div><div class="dg-empty">\u2728<br>还没有掌握任何字词<br>坚持学习就能掌握！</div>';
+  var html='<div class="dg-stat-row"><div class="dg-stat"><div class="dg-stat-n" style="color:var(--green)">'+mc.length+'</div><div class="dg-stat-l">已掌握</div></div><div class="dg-stat"><div class="dg-stat-n">'+total+'</div><div class="dg-stat-l">总字词</div></div><div class="dg-stat"><div class="dg-stat-n">'+Math.round(mc.length/total*100)+'%</div><div class="dg-stat-l">完成率</div></div></div>';
+  html+='<div style="font-size:13px;color:var(--muted);margin:14px 0 8px;font-weight:700">已掌握字词列表</div>';
+  // Show each mastered char with progress
+  mc.forEach(function(ch){
+    var cards=C.filter(function(x){return x.c===ch});
+    var masteredCount=0;
+    cards.forEach(function(c,idx){
+      var origIdx=C.indexOf(c);
+      if(done(origIdx))masteredCount++;
+    });
+    var pct=Math.round(masteredCount/cards.length*100);
+    var color=pct>=80?'var(--green)':pct>=50?'var(--gold)':'var(--accent)';
+    html+='<div class="dg-mastery-item"><div class="dg-m-char">'+ch+'</div><div class="dg-m-info"><div class="dg-m-label"><span>'+masteredCount+'/'+cards.length+' 含义已学</span><span>'+pct+'%</span></div><div class="dg-m-bar"><div class="dg-m-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div></div></div>';
+  });
+  return html;
 }
 
 /* ==================== 快捷键 ==================== */

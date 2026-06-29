@@ -76,10 +76,10 @@
     <div class="rank-bar"><div class="rank-bf" id="rBar"></div></div>
   </div>
   <div class="pstats">
-    <div class="stc"><div class="stc-n" id="sW">0</div><div class="stc-l">学过含义</div></div>
-    <div class="stc"><div class="stc-n g" id="sA">0%</div><div class="stc-l">测验正确率</div></div>
-    <div class="stc"><div class="stc-n" id="sS">0</div><div class="stc-l">测验次数</div></div>
-    <div class="stc"><div class="stc-n" id="sC">0</div><div class="stc-l">字已掌握</div></div>
+    <div class="stc clickable" onclick="showDetail('learned')"><div class="stc-n" id="sW">0</div><div class="stc-l">学过含义 <span class="stc-arrow">›</span></div></div>
+    <div class="stc clickable" onclick="showDetail('accuracy')"><div class="stc-n g" id="sA">0%</div><div class="stc-l">测验正确率 <span class="stc-arrow">›</span></div></div>
+    <div class="stc clickable" onclick="showDetail('quizCount')"><div class="stc-n" id="sS">0</div><div class="stc-l">测验次数 <span class="stc-arrow">›</span></div></div>
+    <div class="stc clickable" onclick="showDetail('mastered')"><div class="stc-n" id="sC">0</div><div class="stc-l">字已掌握 <span class="stc-arrow">›</span></div></div>
   </div>
 </div>
 
@@ -90,6 +90,17 @@
   <div class="ni" data-s="quiz" onclick="startQuiz()"><b>⚔️</b><span>测验</span></div>
   <div class="ni" data-s="lib" onclick="nav('lib')"><b>📚</b><span>词库</span></div>
   <div class="ni" data-s="prof" onclick="nav('prof')"><b>👤</b><span>我的</span></div>
+</div>
+
+<!-- ===== 统计详情弹窗 ===== -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetailBg(event)">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <span class="detail-title" id="detailTitle">详情</span>
+      <span class="detail-close" onclick="closeDetail()">✕</span>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
 </div>
 
 <!-- ===== 中途测验弹窗 ===== -->
