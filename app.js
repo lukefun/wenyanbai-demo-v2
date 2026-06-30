@@ -377,7 +377,8 @@ function setGramFilter(t,el){
 
 /* ==================== 我的 ==================== */
 function renderProf(){
-  var nc=newCount(),learned=C.length-nc;
+  var fc=filterC();
+  var nc=newCount(),learned=fc.length-nc;
   var mc=mastered().length;
   var pct=stats.t>0?Math.round(stats.c/stats.t*100):0;
   var ranks=[
@@ -673,7 +674,7 @@ function pinConfirm(){
   if(_pinAction==='reset'){
     if(!resetUserData(pin)){alert('PIN码错误');document.getElementById('pinInput').value='';return;}
     closePinModal();
-    if(confirm('确定要重置所有学习数据吗？\n此操作不可撤销！')){renderProf();updateHome();}
+    if(confirm('确定要重置所有学习数据吗？\n此操作不可撤销！')){loadUserData();renderProf();updateHome();}
     return;
   }
 }
