@@ -15,6 +15,7 @@
 <div class="sc on" id="s-home">
   <div style="padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between">
     <span style="font-size:20px;font-weight:900;letter-spacing:1px">文言斩</span>
+    <span style="font-size:12px;color:var(--muted)" id="hUser"></span>
     <span style="font-size:12px;color:var(--muted)" id="hStreak"></span>
   </div>
   <div class="hero">
@@ -68,6 +69,16 @@
   </div>
 </div>
 
+<!-- ===== 语法页 ===== -->
+<div class="sc" id="s-gram">
+  <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:20px;font-weight:900">语法</span>
+    <span style="font-size:12px;color:var(--muted)" id="gramBadge"></span>
+  </div>
+  <div class="fil" style="margin:0 16px 10px" id="gramFil"></div>
+  <div style="padding:0 16px;flex:1;overflow-y:auto" id="gramC"></div>
+</div>
+
 <!-- ===== 我的页 ===== -->
 <div class="sc" id="s-prof">
   <div style="padding:14px 16px 6px"><span style="font-size:20px;font-weight:900">我的</span></div>
@@ -83,6 +94,7 @@
     <div class="stc clickable" onclick="showDetail('quizCount')"><div class="stc-n" id="sS">0</div><div class="stc-l">测验次数 <span class="stc-arrow">›</span></div></div>
     <div class="stc clickable" onclick="showDetail('mastered')"><div class="stc-n" id="sC">0</div><div class="stc-l">字已掌握 <span class="stc-arrow">›</span></div></div>
   </div>
+  <div id="profMgmt" style="padding:0 16px"></div>
 </div>
 
 <!-- ===== 底栏 ===== -->
@@ -91,6 +103,7 @@
   <div class="ni" data-s="learn" onclick="startLearn()"><b>📖</b><span>学习</span></div>
   <div class="ni" data-s="quiz" onclick="startQuiz()"><b>⚔️</b><span>测验</span></div>
   <div class="ni" data-s="lib" onclick="nav('lib')"><b>📚</b><span>词库</span></div>
+  <div class="ni" data-s="gram" onclick="nav('gram')"><b>📝</b><span>语法</span></div>
   <div class="ni" data-s="prof" onclick="nav('prof')"><b>👤</b><span>我的</span></div>
 </div>
 
@@ -118,11 +131,41 @@
   </div>
 </div>
 
+<!-- ===== PIN 弹窗 ===== -->
+<div class="modal-overlay" id="pinModal">
+  <div class="modal">
+    <div class="modal-t" id="pinTitle">输入PIN码</div>
+    <div class="pin-display">
+      <input type="password" id="pinInput" readonly>
+    </div>
+    <div class="pin-keypad">
+      <div class="pin-key" onclick="pinInput('1')">1</div>
+      <div class="pin-key" onclick="pinInput('2')">2</div>
+      <div class="pin-key" onclick="pinInput('3')">3</div>
+      <div class="pin-key" onclick="pinInput('4')">4</div>
+      <div class="pin-key" onclick="pinInput('5')">5</div>
+      <div class="pin-key" onclick="pinInput('6')">6</div>
+      <div class="pin-key" onclick="pinInput('7')">7</div>
+      <div class="pin-key" onclick="pinInput('8')">8</div>
+      <div class="pin-key" onclick="pinInput('9')">9</div>
+      <div class="pin-key pin-key-empty"></div>
+      <div class="pin-key" onclick="pinInput('0')">0</div>
+      <div class="pin-key pin-key-action" onclick="pinBackspace()">⌫</div>
+    </div>
+    <div class="modal-b" style="margin-top:12px">
+      <button class="btn btn-g" onclick="pinClear()">清除</button>
+      <button class="btn btn-p" onclick="pinConfirm()">确认</button>
+    </div>
+    <div style="margin-top:8px"><span style="font-size:12px;color:var(--muted);cursor:pointer" onclick="closePinModal()">取消</span></div>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script src="data/cards.js"></script>
 <script src="data/categories.js"></script>
 <script src="data/quiz.js"></script>
+<script src="data/grammar.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

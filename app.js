@@ -5,17 +5,29 @@ var INT=[0,180000,900000,5400000,86400000,172800000,345600000,604800000,12960000
 var LVL_NAME=['新学','速记','巩固','短期','隔日','短周','中周','长周','月检','熟知'];
 var LVL_CLR=['#bbb','#e08080','#d89040','#d4a830','#50a868','#4890b8','#6878b8','#7868c0','#c08040','#b068a8'];
 
+/* ==================== 用户管理 ==================== */
+var _PIN_SALT='wy2024';
+function getUsers(){try{return JSON.parse(localStorage.getItem('w3_users')||'[]');}catch(e){return[];}}
+function setUsers(u){localStorage.setItem('w3_users',JSON.stringify(u));}
+function curUser(){var id=localStorage.getItem('w3_cur');var users=getUsers();for(var i=0;i<users.length;i++){if(users[i].id===id)return users[i];}return users[0]||null;}
+function loadUserData(){var u=curUser();if(!u)return;var p='w3_'+u.id+'_';try{R=JSON.parse(localStorage.getItem(p+'r')||'{}');}catch(e){R={};}try{stats=JSON.parse(localStorage.getItem(p+'s')||'{"t":0,"c":0}');}catch(e){stats={t:0,c:0};}try{quizHistory=JSON.parse(localStorage.getItem(p+'qh')||'[]');}catch(e){quizHistory=[];}var sc=localStorage.getItem(p+'cat');lCat=(sc&&CATS[sc])?sc:'all';}
+function saveUserData(){var u=curUser();if(!u)return;var p='w3_'+u.id+'_';localStorage.setItem(p+'r',JSON.stringify(R));localStorage.setItem(p+'s',JSON.stringify(stats));localStorage.setItem(p+'qh',JSON.stringify(quizHistory));localStorage.setItem(p+'cat',lCat);}
+function hashPin(pin){return btoa(_PIN_SALT+pin+_PIN_SALT.split('').reverse().join(''));}
+function verifyPin(user,pin){if(!user.pin)return true;return user.pin===hashPin(pin);}
+function createUser(name,pin){var users=getUsers();var u={id:'u'+Date.now()+'_'+Math.random().toString(36).substr(2,4),name:name,pin:pin?hashPin(pin):'',created:Date.now()};users.push(u);setUsers(users);localStorage.setItem('w3_cur',u.id);R={};stats={t:0,c:0};quizHistory=[];lCat='all';saveUserData();return u;}
+function switchUser(id,pin){var users=getUsers();var target=null;for(var i=0;i<users.length;i++){if(users[i].id===id){target=users[i];break;}}if(!target)return false;if(target.pin&&!verifyPin(target,pin))return false;saveUserData();localStorage.setItem('w3_cur',id);loadUserData();return true;}
+function deleteUser(id,pin){var users=getUsers();var target=null;for(var i=0;i<users.length;i++){if(users[i].id===id){target=users[i];break;}}if(!target)return false;if(target.pin&&!verifyPin(target,pin))return false;users=users.filter(function(u){return u.id!==id;});setUsers(users);['r','s','qh','cat'].forEach(function(k){localStorage.removeItem('w3_'+id+'_'+k);});if(users.length===0){localStorage.removeItem('w3_cur');R={};stats={t:0,c:0};quizHistory=[];}else if(localStorage.getItem('w3_cur')===id){localStorage.setItem('w3_cur',users[0].id);loadUserData();}return true;}
+function resetUserData(pin){var u=curUser();if(!u)return false;if(u.pin&&!verifyPin(u,pin))return false;R={};stats={t:0,c:0};quizHistory=[];saveUserData();return true;}
+
 /* ==================== 状态 ==================== */
-var R={};try{R=JSON.parse(localStorage.getItem('w3_r')||'{}');}catch(e){R={};}
-var stats={t:0,c:0};try{stats=JSON.parse(localStorage.getItem('w3_s')||'{"t":0,"c":0}');}catch(e){stats={t:0,c:0};}
-var quizHistory=[];try{quizHistory=JSON.parse(localStorage.getItem('w3_qh')||'[]');}catch(e){quizHistory=[]};
+var R={};var stats={t:0,c:0};var quizHistory=[];
 var lQueue=[],lPos=0,lRev=false,lFilter='all',lLibTab='all';
-var _savedCat=localStorage.getItem('w3_cat');lCat=(_savedCat&&CATS[_savedCat])?_savedCat:'all';
+var lCat='all';
 var sNewCount=0,sNewList=[];
 var revealed=false;
 
 /* ==================== 工具 ==================== */
-function save(){localStorage.setItem('w3_r',JSON.stringify(R));localStorage.setItem('w3_s',JSON.stringify(stats));localStorage.setItem('w3_qh',JSON.stringify(quizHistory));}
+function save(){saveUserData();}
 function ival(l){return l<INT.length?INT[l]:INT[INT.length-1];}
 function lv(i){return R[i]?R[i].l:0;}
 function done(i){return lv(i)>0;}
@@ -35,6 +47,7 @@ function nav(s){
   document.querySelectorAll('.ni').forEach(function(e){e.classList.toggle('on',e.dataset.s===s)});
   if(s==='home')updateHome();
   if(s==='lib')renderLib();
+  if(s==='gram')renderGram();
   if(s==='prof')renderProf();
 }
 
@@ -68,7 +81,7 @@ function catCount(cat){
   return cnt;
 }
 function setCat(cat){
-  lCat=cat;localStorage.setItem('w3_cat',cat);
+  lCat=cat;saveUserData();
   renderCatSel();updateHome();
 }
 
@@ -94,6 +107,7 @@ function updateHome(){
   else if(nc===0)actS.textContent=dc+' \u5f20\u5f85\u590d\u4e60';
   else actS.textContent=dc+' \u590d\u4e60 + '+nc+' \u65b0\u8bcd';
   renderCatSel();
+  var hu=document.getElementById('hUser');if(hu){var _u=curUser();hu.textContent=_u?_u.name:'';}
 }
 function setFilter(f,el){lFilter=f;document.querySelectorAll('#hFil .fil-i').forEach(function(e){e.classList.remove('on')});if(el)el.classList.add('on');}
 
@@ -320,6 +334,47 @@ function renderLib(){
   });
 }
 
+/* ==================== 语法 ==================== */
+var G=window.GRAMMAR||[];
+var gramFilter='all';
+function renderGram(){
+  var badge=document.getElementById('gramBadge');
+  badge.textContent=G.length+' 个知识点';
+  // 筛选按钮
+  var types=['all'];
+  G.forEach(function(g){if(types.indexOf(g.k)<0)types.push(g.k);});
+  var fil=document.getElementById('gramFil');
+  var fh='';
+  types.forEach(function(t){
+    var label=t==='all'?'全部':t;
+    var cnt=t==='all'?G.length:G.filter(function(g){return g.k===t;}).length;
+    fh+='<div class="fil-i'+(gramFilter===t?' on':'')+'" onclick="setGramFilter(\''+t+'\',this)">'+label+' '+cnt+'</div>';
+  });
+  fil.innerHTML=fh;
+  // 卡片列表
+  var c=document.getElementById('gramC');
+  var filtered=gramFilter==='all'?G:G.filter(function(g){return g.k===gramFilter;});
+  var html='';
+  filtered.forEach(function(g){
+    html+='<div class="gram-card">';
+    html+='<div class="gram-head"><div class="gram-char">'+g.t+'</div>';
+    html+='<div class="gram-meta"><div class="gram-title">'+g.title+'</div>';
+    html+='<span class="gram-tag">'+g.k+'</span></div></div>';
+    html+='<div class="gram-content">'+g.content+'</div>';
+    html+='<div class="gram-explain">💡 '+g.explain+'</div>';
+    html+='<div class="gram-sent">'+g.s+'</div>';
+    html+='<div class="gram-src">—— '+g.r+'</div>';
+    html+='</div>';
+  });
+  c.innerHTML=html;
+}
+function setGramFilter(t,el){
+  gramFilter=t;
+  document.querySelectorAll('#gramFil .fil-i').forEach(function(e){e.classList.remove('on');});
+  if(el)el.classList.add('on');
+  renderGram();
+}
+
 /* ==================== 我的 ==================== */
 function renderProf(){
   var nc=newCount(),learned=C.length-nc;
@@ -340,6 +395,26 @@ function renderProf(){
   document.getElementById('sA').textContent=pct+'%';
   document.getElementById('sS').textContent=stats.t;
   document.getElementById('sC').textContent=mc;
+  // 档案管理
+  var profMgmt=document.getElementById('profMgmt');
+  if(!profMgmt)return;
+  var cu=curUser();var users=getUsers();
+  var h='<div class="profile-section"><div class="profile-section-title">学习档案</div>';
+  h+='<div class="current-user"><div class="current-user-info"><span class="current-user-name">'+cu.name+'</span>'+(cu.pin?'<span class="pin-badge">🔒 已设PIN</span>':'<span class="pin-badge pin-badge-warn">⚠ 未设PIN</span>')+'</div>';
+  h+='<div class="current-user-actions"><button class="btn-pin" onclick="openPinSetup()">设置/修改PIN</button></div></div>';
+  h+='<div class="user-list">';
+  for(var i=0;i<users.length;i++){var u=users[i];var isActive=u.id===cu.id;
+    h+='<div class="user-card'+(isActive?' active':'')+'" onclick="onUserClick(\''+u.id+'\')">';
+    h+='<div class="user-card-info"><div class="user-card-name">'+u.name+'</div>';
+    h+='<div class="user-card-status">'+(isActive?'<span style="color:var(--green)">当前</span>':'')+(u.pin?' 🔒':'')+'</div></div>';
+    if(!isActive)h+='<div class="user-card-del" onclick="event.stopPropagation();confirmDeleteUser(\''+u.id+'\')">✕</div>';
+    h+='</div>';}
+  h+='</div>';
+  h+='<button class="btn-create-user" onclick="showCreateDialog()">＋ 新建档案</button></div>';
+  h+='<div class="profile-section danger-zone"><div class="profile-section-title" style="color:#d05050">⚠ 危险操作</div>';
+  h+='<button class="btn-danger" onclick="openPinModal(\'reset\')">重置学习数据</button>';
+  h+='<div class="danger-hint">清除当前档案的所有学习进度、测验记录</div></div>';
+  profMgmt.innerHTML=h;
 }
 
 /* ==================== 统计详情弹窗 ==================== */
@@ -534,4 +609,126 @@ document.addEventListener('keydown',function(e){
 });
 
 /* ==================== 初始化 ==================== */
-updateHome();
+(function(){
+  var users=getUsers();
+  if(users.length===0){
+    var oldR=null;try{oldR=JSON.parse(localStorage.getItem('w3_r'));}catch(e){}
+    if(oldR&&Object.keys(oldR).length>0){
+      var oldStats={t:0,c:0};try{oldStats=JSON.parse(localStorage.getItem('w3_s')||'{}');}catch(e){}
+      var oldQH=[];try{oldQH=JSON.parse(localStorage.getItem('w3_qh')||'[]');}catch(e){}
+      var u=createUser('默认档案','');
+      R=oldR;stats=oldStats;quizHistory=oldQH;saveUserData();
+      localStorage.removeItem('w3_r');localStorage.removeItem('w3_s');localStorage.removeItem('w3_qh');localStorage.removeItem('w3_cat');
+    }else{createUser('默认档案','');}
+  }else{loadUserData();}
+  updateHome();
+})();
+
+/* ==================== PIN 弹窗 ==================== */
+var _pinAction='',_pinTargetId='',_pinStep='',_newPinVal='';
+function openPinModal(action,targetId){
+  _pinAction=action;_pinTargetId=targetId||'';_pinStep='';_newPinVal='';
+  var m=document.getElementById('pinModal');var t=document.getElementById('pinTitle');var inp=document.getElementById('pinInput');
+  inp.value='';
+  if(action==='verify-switch'){t.textContent='输入PIN码以切换档案';}
+  else if(action==='verify-delete'){t.textContent='输入PIN码以删除档案';}
+  else if(action==='reset'){t.textContent='输入PIN码以重置数据';}
+  else if(action==='setup'){t.textContent='设置PIN码（4-6位数字）';}
+  else if(action==='confirm-setup'){t.textContent='请再次输入PIN码确认';}
+  m.classList.add('on');
+}
+function closePinModal(){document.getElementById('pinModal').classList.remove('on');_pinAction='';}
+function pinInput(v){var inp=document.getElementById('pinInput');if(inp.value.length<6)inp.value+=v;}
+function pinBackspace(){var inp=document.getElementById('pinInput');inp.value=inp.value.slice(0,-1);}
+function pinClear(){document.getElementById('pinInput').value='';}
+function pinConfirm(){
+  var pin=document.getElementById('pinInput').value;
+  var users=getUsers();var cu=curUser();
+  if(_pinAction==='setup'){
+    if(pin.length<4||pin.length>6||!/\d+/.test(pin)){alert('PIN码需为4-6位数字');return;}
+    _newPinVal=pin;_pinAction='confirm-setup';
+    document.getElementById('pinTitle').textContent='请再次输入PIN码确认';
+    document.getElementById('pinInput').value='';return;
+  }
+  if(_pinAction==='confirm-setup'){
+    if(pin!==_newPinVal){alert('两次输入不一致，请重新设置');_pinAction='setup';document.getElementById('pinTitle').textContent='设置PIN码（4-6位数字）';document.getElementById('pinInput').value='';return;}
+    var freshUsers=getUsers();var freshCur=curUser();
+    if(!freshCur){closePinModal();return;}
+    for(var i=0;i<freshUsers.length;i++){if(freshUsers[i].id===freshCur.id){freshUsers[i].pin=hashPin(pin);break;}}
+    setUsers(freshUsers);_pinAction='';
+    document.getElementById('pinModal').classList.remove('on');
+    setTimeout(function(){renderProf();updateHome();},350);
+    return;
+  }
+  if(_pinAction==='verify-switch'){
+    if(switchUser(_pinTargetId,pin)){closePinModal();renderProf();updateHome();}
+    else{alert('PIN码错误');document.getElementById('pinInput').value='';}
+    return;
+  }
+  if(_pinAction==='verify-delete'){
+    if(deleteUser(_pinTargetId,pin)){closePinModal();renderProf();updateHome();}
+    else{alert('PIN码错误');document.getElementById('pinInput').value='';}
+    return;
+  }
+  if(_pinAction==='reset'){
+    if(!resetUserData(pin)){alert('PIN码错误');document.getElementById('pinInput').value='';return;}
+    closePinModal();
+    if(confirm('确定要重置所有学习数据吗？\n此操作不可撤销！')){renderProf();updateHome();}
+    return;
+  }
+}
+function openPinSetup(){openPinModal('setup');}
+function showCreateDialog(){
+  var overlay=document.getElementById('detailOverlay');
+  var title=document.getElementById('detailTitle');
+  var body=document.getElementById('detailBody');
+  title.textContent='新建档案';
+  body.innerHTML='<div style="padding:20px 0"><div style="margin-bottom:16px"><label style="font-size:13px;color:var(--muted);display:block;margin-bottom:6px">档案名称</label><input type="text" id="newUserName" placeholder="输入名称" maxlength="10" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:15px;outline:none;font-family:var(--sans)"></div><button class="btn btn-p" onclick="doCreateUser()">创建</button></div>';
+  overlay.classList.add('on');
+  setTimeout(function(){document.getElementById('newUserName').focus();},300);
+}
+function doCreateUser(){
+  var name=document.getElementById('newUserName').value.trim();
+  if(!name){alert('请输入档案名称');return;}
+  createUser(name,'');
+  closeDetail();renderProf();updateHome();
+  setTimeout(function(){openPinModal('setup');},400);
+}
+function onUserClick(id){
+  var cu=curUser();if(id===cu.id){showUserDialog(id);return;}
+  var users=getUsers();var target=null;
+  for(var i=0;i<users.length;i++){if(users[i].id===id){target=users[i];break;}}
+  if(!target)return;
+  if(target.pin){openPinModal('verify-switch',id);}
+  else{switchUser(id,'');renderProf();updateHome();}
+}
+function showUserDialog(id){
+  var overlay=document.getElementById('detailOverlay');
+  var title=document.getElementById('detailTitle');
+  var body=document.getElementById('detailBody');
+  var users=getUsers();var user=null;
+  for(var i=0;i<users.length;i++){if(users[i].id===id){user=users[i];break;}}
+  if(!user)return;
+  title.textContent='档案操作';
+  var h='<div style="padding:20px 0"><div style="text-align:center;margin-bottom:20px"><div style="font-size:36px;font-weight:900">'+user.name+'</div>';
+  h+='<div style="font-size:12px;color:var(--muted);margin-top:4px">'+(user.pin?'已设置PIN码':'未设置PIN码')+'</div></div>';
+  if(users.length>1)h+='<button class="btn btn-g" style="margin-bottom:10px;color:#d05050;border-color:#d05050" onclick="closeDetail();confirmDeleteUser(\''+id+'\')">删除此档案</button>';
+  h+='<button class="btn btn-g" onclick="closeDetail()">取消</button></div>';
+  body.innerHTML=h;overlay.classList.add('on');
+}
+function confirmDeleteUser(id){
+  var users=getUsers();var target=null;
+  for(var i=0;i<users.length;i++){if(users[i].id===id){target=users[i];break;}}
+  if(!target)return;
+  if(users.length<=1){alert('至少保留一个档案');return;}
+  if(!confirm('确定删除档案「'+target.name+'」？\n该档案的所有学习数据将被清除！'))return;
+  if(target.pin){openPinModal('verify-delete',id);}
+  else{deleteUser(id,'');renderProf();updateHome();}
+}
+function renderUserCard(u,cu){
+  var isActive=u.id===cu.id;
+  var h='<div class="user-card'+(isActive?' active':'')+'">';
+  h+='<div class="user-card-info"><div class="user-card-name">'+u.name+'</div>';
+  h+='<div class="user-card-status">'+(isActive?'当前':'')+(u.pin?' 🔒':'')+'</div></div></div>';
+  return h;
+}

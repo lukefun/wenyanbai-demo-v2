@@ -185,3 +185,48 @@ body{font-family:var(--sans);color:var(--text);overflow:hidden}
 .dg-qi-ans{color:#d05050;font-size:12px;margin-top:2px;padding-left:22px;line-height:1.5}
 .dg-qi-ok{background:rgba(61,139,99,.03)}
 .dg-qi-no{background:rgba(208,80,80,.04)}
+/* 档案管理 */
+.profile-section{background:var(--card);border-radius:14px;padding:16px;margin:14px 0 0}
+.profile-section-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.current-user{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.current-user-info{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.current-user-name{font-size:16px;font-weight:900}
+.pin-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(61,139,99,.1);color:var(--green)}
+.pin-badge-warn{background:rgba(208,80,80,.1);color:#d05050}
+.btn-pin{padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);font-size:12px;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap}
+.btn-pin:active{transform:scale(.96)}
+.user-list{display:flex;flex-direction:column;gap:6px}
+.user-card{display:flex;align-items:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;transition:all .15s}
+.user-card:active{transform:scale(.98)}
+.user-card.active{border-color:var(--accent);background:rgba(192,64,48,.03)}
+.user-card-info{flex:1;min-width:0}
+.user-card-name{font-size:14px;font-weight:700}
+.user-card-status{font-size:11px;color:var(--muted);margin-top:2px}
+.user-card-del{font-size:14px;color:#d05050;padding:4px 8px;cursor:pointer;border-radius:6px;transition:background .15s}
+.user-card-del:hover{background:rgba(208,80,80,.1)}
+.btn-create-user{width:100%;padding:12px;border:2px dashed var(--border);border-radius:12px;background:transparent;font-size:13px;color:var(--muted);cursor:pointer;margin-top:8px;transition:all .15s}
+.btn-create-user:active{transform:scale(.98)}
+.danger-zone{margin-top:16px;border:1.5px solid rgba(208,80,80,.2)}
+.btn-danger{width:100%;padding:14px;border:none;border-radius:12px;background:#d05050;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:transform .15s}
+.btn-danger:active{transform:scale(.96)}
+.danger-hint{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+/* PIN 弹窗 */
+.pin-display{margin:16px 0}
+.pin-display input{width:100%;text-align:center;font-size:28px;font-weight:900;letter-spacing:12px;padding:12px;border:2px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text);outline:none;font-family:var(--sans)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:240px;margin:0 auto}
+.pin-key{padding:14px 0;text-align:center;font-size:20px;font-weight:700;border-radius:10px;background:var(--bg);cursor:pointer;transition:background .15s;user-select:none}
+.pin-key:active{background:var(--border)}
+.pin-key-empty{visibility:hidden}
+.pin-key-action{font-size:18px;color:var(--muted)}
+/* 语法知识卡片 */
+.gram-card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px}
+.gram-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gram-char{font-family:var(--serif);font-size:28px;font-weight:900;color:var(--accent);width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(192,64,48,.06);border-radius:12px;flex-shrink:0}
+.gram-meta{flex:1;min-width:0}
+.gram-title{font-size:15px;font-weight:700;margin-bottom:3px}
+.gram-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:8px;background:var(--gold);color:#fff;font-weight:600}
+.gram-content{font-size:14px;line-height:1.7;color:var(--text);margin-bottom:8px}
+.gram-explain{font-size:13px;color:#6a5e50;line-height:1.6;padding:10px 12px;background:rgba(184,134,11,.05);border-radius:10px;margin-bottom:10px}
+.gram-sent{font-family:var(--serif);font-size:16px;font-weight:700;line-height:1.8;padding:0 4px}
+.gram-sent .hl{background:#fff3e0;color:var(--accent);padding:1px 4px;border-radius:3px;border-bottom:2px solid var(--accent)}
+.gram-src{font-size:11px;color:var(--muted);margin-top:4px;text-align:right}
